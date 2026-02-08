@@ -5,17 +5,20 @@ var radius = 10;
 var puntoX = c.width / 2;
 var puntoY = c.height - 30;
 
+// Velocidad base
+var baseSpeed = 2;
+var speedMultiplier = 1; // Multiplicador de velocidad
+
 // Función para obtener dirección aleatoria
 function getRandomDirection() {
-    var randomDx = Math.random() * 4 - 2; // Entre -2 y 2
+    var randomDx = Math.random() * 4 - 2;
     if (Math.abs(randomDx) < 0.5) {
         randomDx = randomDx > 0 ? 1 : -1;
     }
-    var randomDy = -(Math.random() * 2 + 2); // Entre -2 y -4
-    return { dx: randomDx, dy: randomDy };
+    var randomDy = -(Math.random() * 2 + 2);
+    return { dx: randomDx * speedMultiplier, dy: randomDy * speedMultiplier };
 }
 
-// Inicializar con dirección aleatoria
 var randomStart = getRandomDirection();
 var dx = randomStart.dx;
 var dy = randomStart.dy;
@@ -118,8 +121,16 @@ function detectHits() {
                     dy = -dy;
                     b.draw = false;
                     score++;
+                    
+                    // AUMENTAR VELOCIDAD cada 3 bloques destruidos
+                    if (score % 3 === 0) {
+                        speedMultiplier += 0.1;
+                        dx = dx > 0 ? dx * 1.1 : dx * 1.1;
+                        dy = dy > 0 ? dy * 1.1 : dy * 1.1;
+                    }
+                    
                     if (score === brickColumns * brickRows) {
-                        alert("¡Eres el mejor!");
+                        alert("¡Eres el mejor! Velocidad final: " + speedMultiplier.toFixed(1) + "x");
                         resetGame();
                     }
                 }
@@ -140,6 +151,13 @@ function drawLives() {
     ctx.fillText("Lives: " + lives, c.width - 90, 20);
 }
 
+// NUEVA FUNCIÓN: Mostrar velocidad
+function drawSpeed() {
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "#ff3300";
+    ctx.fillText("Speed: " + speedMultiplier.toFixed(1) + "x", c.width / 2 - 40, 20);
+}
+
 function draw() {
     ctx.clearRect(0, 0, c.width, c.height);
     drawBricks();
@@ -148,11 +166,16 @@ function draw() {
     detectHits();
     drawScore();
     drawLives();
+    drawSpeed(); // MOSTRAR VELOCIDAD
 
     if (puntoX + dx > c.width - radius || puntoX + dx < radius) dx = -dx;
     if (puntoY + dy < radius) dy = -dy;
     else if (puntoY + dy > c.height - radius) {
-        if (puntoX > paddleX && puntoX < paddleX + paddleW) dy = -dy;
+        if (puntoX > paddleX && puntoX < paddleX + paddleW) {
+            dy = -dy;
+            dx = dx > 0 ? dx * 1.02 : dx * 1.02;
+             dy = dy * 1.02;
+        }
         else {
             lives--;
             if (lives === 0) {
@@ -161,7 +184,6 @@ function draw() {
             } else {
                 puntoX = c.width / 2;
                 puntoY = c.height - 30;
-                // Nueva dirección aleatoria al perder una vida
                 var newDirection = getRandomDirection();
                 dx = newDirection.dx;
                 dy = newDirection.dy;
@@ -200,8 +222,12 @@ function gameOver() {
     
     ctxGO.font = "24px Arial";
     ctxGO.fillStyle = "#ffff00";
-    ctxGO.strokeText("Click para reiniciar", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 70);
-    ctxGO.fillText("Click para reiniciar", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 70);
+    ctxGO.strokeText("Velocidad máxima: " + speedMultiplier.toFixed(1) + "x", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 50);
+    ctxGO.fillText("Velocidad máxima: " + speedMultiplier.toFixed(1) + "x", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 50);
+    
+    ctxGO.font = "20px Arial";
+    ctxGO.strokeText("Click para reiniciar", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 90);
+    ctxGO.fillText("Click para reiniciar", gameOverCanvas.width / 2, gameOverCanvas.height / 2 + 90);
     
     gameOverCanvas.onclick = resetGame;
 }
@@ -209,9 +235,9 @@ function gameOver() {
 function resetGame() {
     score = 0;
     lives = 3;
+    speedMultiplier = 1; // RESETEAR VELOCIDAD
     puntoX = c.width / 2;
     puntoY = c.height - 30;
-    // Nueva dirección aleatoria al reiniciar
     var newDirection = getRandomDirection();
     dx = newDirection.dx;
     dy = newDirection.dy;
